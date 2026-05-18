@@ -1,0 +1,101 @@
+.aicor-cbn8n {
+  --primary: #2563eb;
+  --accent: #16a34a;
+  --text: #111827;
+  --surface: #ffffff;
+  --bottom: 24px;
+  --side: 24px;
+  --width: 380px;
+  --height: 560px;
+  position: fixed;
+  right: var(--side);
+  bottom: var(--bottom);
+  z-index: 99999;
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+.aicor-cbn8n--left { right: auto; left: var(--side); }
+.aicor-cbn8n * { box-sizing: border-box; }
+.aicor-cbn8n-panel {
+  display: grid;
+  grid-template-rows: auto 1fr auto auto;
+  width: min(var(--width), calc(100vw - 28px));
+  height: min(var(--height), calc(100vh - var(--bottom) - 98px));
+  margin-bottom: 14px;
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid rgba(17, 24, 39, .12);
+  border-radius: 8px;
+  box-shadow: 0 22px 70px rgba(15, 23, 42, .24);
+  opacity: 0;
+  transform: translateY(12px);
+  pointer-events: none;
+  transition: opacity .16s ease, transform .16s ease;
+}
+.aicor-cbn8n.is-open .aicor-cbn8n-panel { opacity: 1; transform: translateY(0); pointer-events: auto; }
+.aicor-cbn8n-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px;
+  background: var(--primary);
+  color: #fff;
+}
+.aicor-cbn8n-header h2 { margin: 0; color: inherit; font-size: 17px; line-height: 1.25; }
+.aicor-cbn8n-header p { margin: 4px 0 0; color: rgba(255,255,255,.82); font-size: 12px; }
+.aicor-cbn8n-close, .aicor-cbn8n-send, .aicor-cbn8n-launcher {
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+  border-radius: 8px;
+}
+.aicor-cbn8n-close { width: 34px; height: 34px; color: #fff; background: rgba(255,255,255,.14); }
+.aicor-cbn8n-messages { min-height: 0; padding: 16px; overflow-y: auto; background: #f8fafc; }
+.aicor-cbn8n-message {
+  width: fit-content;
+  max-width: 86%;
+  margin: 0 0 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.aicor-cbn8n-message--assistant { background: #fff; border: 1px solid rgba(17,24,39,.08); }
+.aicor-cbn8n-message--user { margin-left: auto; color: #fff; background: var(--primary); }
+.aicor-cbn8n-typing { padding: 0 16px 10px; color: #64748b; background: #f8fafc; font-size: 12px; }
+.aicor-cbn8n-form {
+  display: grid;
+  grid-template-columns: 1fr 74px;
+  gap: 10px;
+  padding: 12px;
+  background: #fff;
+  border-top: 1px solid rgba(17,24,39,.08);
+}
+.aicor-cbn8n-input {
+  width: 100%;
+  min-height: 42px;
+  padding: 10px 12px;
+  resize: vertical;
+  border: 1px solid rgba(17,24,39,.14);
+  border-radius: 8px;
+  font: inherit;
+  font-size: 14px;
+}
+.aicor-cbn8n-send { color: #fff; background: var(--accent); font-weight: 700; }
+.aicor-cbn8n-launcher {
+  display: block;
+  min-height: 52px;
+  margin-left: auto;
+  padding: 13px 16px;
+  color: #fff;
+  background: var(--primary);
+  box-shadow: 0 12px 34px rgba(37,99,235,.3);
+  font-weight: 700;
+}
+.aicor-cbn8n--left .aicor-cbn8n-launcher { margin-left: 0; margin-right: auto; }
+@media (max-width: 520px) {
+  .aicor-cbn8n { right: 14px; left: 14px; bottom: 14px; }
+  .aicor-cbn8n-panel { width: 100%; height: min(620px, calc(100vh - 92px)); }
+}

@@ -1,0 +1,892 @@
+﻿{
+    "nodes":  [
+                  {
+                      "parameters":  {
+                                         "jsCode":  "const raw = $json || {};\nconst query = raw.query || {};\nconst body = raw.body || {};\nconst metadata = raw.metadata || {};\n\n// Fallback para el iframe de demo. n8n Chat Trigger no siempre conserva query params\n// entre la carga del iframe y el mensaje enviado al workflow.\nconst DEFAULT_CLIENT_ID = \u0027e3cf4d5e-a16d-4b64-8751-c7444c60ad26\u0027;\nconst DEFAULT_COMPANY_NAME = \u0027Empresa de Prueba\u0027;\n\nconst rawSessionId = raw.sessionId || body.sessionId || query.sessionId || $execution?.id || \u0027default\u0027;\nconst userMsg = (\n  raw.chatInput ||\n  raw.message ||\n  raw.text ||\n  body.chatInput ||\n  body.message ||\n  \u0027\u0027\n).trim();\n\nconst clientId = String(\n  raw.client_id ||\n  raw.clientId ||\n  body.client_id ||\n  body.clientId ||\n  query.client_id ||\n  query.clientId ||\n  metadata.client_id ||\n  DEFAULT_CLIENT_ID\n).trim();\n\nconst companyName = String(\n  raw.company_name ||\n  raw.companyName ||\n  raw.empresa ||\n  body.company_name ||\n  body.companyName ||\n  query.company_name ||\n  query.companyName ||\n  metadata.company_name ||\n  DEFAULT_COMPANY_NAME\n).trim();\n\nif (!clientId) throw new Error(\u0027client_id es obligatorio para aislar el chatbot por cliente\u0027);\n\nconst sessionId = `${clientId}:${rawSessionId}`;\n\nreturn [{ json: { ...raw, sessionId, rawSessionId, userMsg, clientId, client_id: clientId, companyName, company_name: companyName } }];"
+                                     },
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       -8240,
+                                       -704
+                                   ],
+                      "id":  "2df3477e-0454-4544-b354-adda49808173",
+                      "name":  "Extraer Datos Entrada1"
+                  },
+                  {
+                      "parameters":  {
+                                         "tableId":  "chat_sessions",
+                                         "fieldsUi":  {
+                                                          "fieldValues":  [
+                                                                              {
+                                                                                  "fieldId":  "client_id",
+                                                                                  "fieldValue":  "={{ $json.clientId || $json.client_id }}"
+                                                                              },
+                                                                              {
+                                                                                  "fieldId":  "session_id",
+                                                                                  "fieldValue":  "={{ $json.sessionId }}"
+                                                                              },
+                                                                              {
+                                                                                  "fieldId":  "role",
+                                                                                  "fieldValue":  "user"
+                                                                              },
+                                                                              {
+                                                                                  "fieldId":  "content",
+                                                                                  "fieldValue":  "={{ $json.userMsg }}"
+                                                                              },
+                                                                              {
+                                                                                  "fieldId":  "created_at",
+                                                                                  "fieldValue":  "={{ new Date().toISOString() }}"
+                                                                              }
+                                                                          ]
+                                                      }
+                                     },
+                      "type":  "n8n-nodes-base.supabase",
+                      "typeVersion":  1,
+                      "position":  [
+                                       -7280,
+                                       -720
+                                   ],
+                      "id":  "cbb06668-a693-490e-840c-45810da6d597",
+                      "name":  "Guardar Mensaje Usuario1",
+                      "credentials":  {
+                                          "supabaseApi":  {
+                                                              "id":  "Nn0VgGHP4LJgHBd2",
+                                                              "name":  "Supabase account"
+                                                          }
+                                      }
+                  },
+                  {
+                      "parameters":  {
+                                         "promptType":  "define",
+                                         "text":  "={{ $(\u0027When chat message received\u0027).item.json.chatInput }}",
+                                         "options":  {
+                                                         "systemMessage":  "=Eres el asistente virtual de {{ $(\u0027Extraer Datos Entrada1\u0027).first().json.companyName || \u0027la empresa\u0027 }}.\nHabla como una persona real: natural, directo, sin florituras.\nSi algo suena a robot o a script, no lo digas.\n\nâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\nANTES DE CADA RESPUESTA â€” OBLIGATORIO\nâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\nAntes de escribir, hazte estas preguntas:\nÂ· Â¿QuÃ© acaba de decir exactamente el usuario?\nÂ· Â¿Ya tengo su nombre? Â¿Ya sÃ© lo que quiere?\nÂ· Â¿Estoy a punto de preguntarle algo que ya me dijo? Si es asÃ­, no lo preguntes.\nÂ· Â¿Me estÃ¡ pidiendo informaciÃ³n de un producto o servicio? Si es asÃ­, dÃ¡sela ANTES de avanzar.\nÂ· Â¿Mi respuesta empieza igual que la anterior? Si es asÃ­, reescrÃ­bela distinto.\n\nPROHIBIDO empezar dos respuestas seguidas con la misma frase o estructura.\nPROHIBIDO usar \"En {{ $(\u0027Extraer Datos Entrada1\u0027).first().json.companyName || \u0027la empresa\u0027 }} podemos ayudarte\" mÃ¡s de una vez en toda la conversaciÃ³n.\nVarÃ­a siempre el inicio: una frase directa, una pregunta, una afirmaciÃ³n, lo que encaje.\n\nâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\nMENSAJE DE BIENVENIDA â€” Solo el primero\nâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\n\"Â¡Hola! Soy el asistente de {{ $(\u0027Extraer Datos Entrada1\u0027).first().json.companyName || \u0027la empresa\u0027 }}.\nÂ¿CÃ³mo te llamas?\"\n\nâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\nPASO 1 Â· NOMBRE\nâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\nCuando dÃ© su nombre, Ãºsalo y pregunta en quÃ© le puedes ayudar.\n\"Hola, [nombre]. Â¿En quÃ© te puedo ayudar?\"\n\nSi en el mismo mensaje da el nombre Y lo que quiere,\nve directamente al Paso 2.\n\nâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\nPASO 2 Â· ENTENDER LA NECESIDAD\nâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\nCuando el usuario diga lo que busca:\nÂ· Una frase conectando con su situaciÃ³n â€” distinta cada vez\nÂ· Di brevemente quÃ© hace {{ $(\u0027Extraer Datos Entrada1\u0027).first().json.companyName || \u0027la empresa\u0027 }} al respecto\nÂ· Haz UNA pregunta concreta para entender mejor\n\nEjemplos de arranques variados:\n- \"Vale, redes sociales. Â¿Tienes ya algo activo o partes desde cero?\"\n- \"Entiendo, eso lo vemos mucho. Â¿Lo necesitas para cuÃ¡ntos usuarios?\"\n- \"FacturaciÃ³n, de acuerdo. Â¿Usas algÃºn programa ahora mismo?\"\n\nSi el usuario pregunta quÃ© incluye un servicio o pide mÃ¡s info,\nrespÃ³ndele con la informaciÃ³n de la base de conocimiento ANTES de seguir.\nNo avances hasta que sus dudas estÃ©n resueltas.\n\nâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\nPASO 3 Â· CUALIFICACIÃ“N\nâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\nCuando ya sepas quÃ© quiere, haz UNA pregunta para conocerle mejor.\nLa mÃ¡s relevante segÃºn lo que haya dicho. Solo una.\n\nâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\nPASO 4 Â· OFERTA DE CONTACTO\nâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\nCuando tengas suficiente contexto, ofrece contacto de forma natural.\n\n\"Oye, [nombre], Â¿quieres que te mande mÃ¡s info por email\no WhatsApp? O si prefieres que te llame alguien del equipo,\ntambiÃ©n lo podemos hacer. Â¿QuÃ© te va mejor?\"\n\nOpciones:\n  a) InformaciÃ³n por email\n  b) InformaciÃ³n por WhatsApp\n  c) Llamada de un comercial\n\nâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\nPASO 5 Â· RECOGIDA DE DATOS\nâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\nSIEMPRE hay que recoger telÃ©fono Y email. Los dos. Sin excepciÃ³n.\n\nÂ· Si elige email:\n  Pide el email â†’ luego â†’ \"Â¿Y un telÃ©fono por si necesitamos contactarte directamente?\"\n\nÂ· Si elige WhatsApp:\n  Pide el telÃ©fono â†’ luego â†’ \"Â¿Y un email por si necesitamos mandarte algo por escrito?\"\n\nÂ· Si elige llamada:\n  \"Â¿A quÃ© nÃºmero te llamamos?\"\n  Cuando lo dÃ© â†’ responde exactamente esto:\n  \"Anotado. Por si no te pillamos a la primera, Â¿nos dejas tambiÃ©n\n  un email? AsÃ­ nos aseguramos de no perdernos.\"\n\nUn dato por mensaje. Sin agobiar.\nNo avances al Paso 6 hasta tener los DOS datos confirmados.\n\nâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\nPASO 6 Â· LEAD_CAPTURED\nâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\nCuando tengas telÃ©fono Y email confirmados y obligatorios del con los datos del usuario si no vuelve a pedir el que te falte, escribe en UNA sola lÃ­nea:\n\nLEAD_CAPTURED:{\"nombre\":\"[nombre real]\",\"email\":\"[email real]\",\"telefono\":\"[telÃ©fono real]\",\"producto_interes\":\"[producto o servicio mencionado]\",\"via_contacto\":\"[email/whatsapp/llamada]\",\"contexto\":\"[resumen breve: sector, necesidad, situaciÃ³n]\",\"origen\":\"chatbot\",\"timestamp\":\"[ISO 8601]\"}\n\nLuego confirma:\n\"Perfecto, [nombre]. Ya lo tenemos apuntado, te contactamos en breve.\nCualquier duda, aquÃ­ estoy.\"\n\nâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\nREGLAS â€” INAMOVIBLES\nâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\nÂ· MÃ¡ximo 3-4 lÃ­neas por respuesta\nÂ· Una sola pregunta por mensaje, al final\nÂ· No preguntes nada que el usuario ya haya respondido\nÂ· Si pide info de un producto, dÃ¡sela antes de avanzar\nÂ· No pidas datos personales antes del Paso 4\nÂ· NUNCA generes LEAD_CAPTURED sin tener telÃ©fono Y email reales\nÂ· Nunca valores su negocio ni lo califiques\nÂ· NUNCA empieces dos respuestas seguidas igual\nÂ· Si no sabes algo: \"Eso te lo confirma el equipo directamente.\n  Â¿Quieres que lo gestionemos?\"\n\nâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\nBASE DE CONOCIMIENTO Y LÃMITES\nâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\nÂ· Responde SOLO con informaciÃ³n de la base de datos de {{ $(\u0027Extraer Datos Entrada1\u0027).first().json.companyName || \u0027la empresa\u0027 }}\nÂ· NUNCA inventes servicios, precios ni compromisos\nÂ· NUNCA muestres cÃ³digo, JSON ni estructuras tÃ©cnicas al usuario\nÂ· NUNCA hables de temas ajenos a {{ $(\u0027Extraer Datos Entrada1\u0027).first().json.companyName || \u0027la empresa\u0027 }} y sus soluciones\\n\\nAISLAMIENTO MULTICLIENTE OBLIGATORIO:\\n- EstÃ¡s atendiendo al cliente con client_id={{ $(\u0027Extraer Datos Entrada1\u0027).first().json.clientId }}.\\n- Responde como el chatbot de {{ $(\u0027Extraer Datos Entrada1\u0027).first().json.companyName || \u0027la empresa\u0027 }}.\\n- Usa solo conocimiento del scrapeo de ese client_id.\\n- Si no hay informaciÃ³n en la base de conocimiento de ese cliente, dilo de forma breve y ofrece que el equipo lo confirme."
+                                                     }
+                                     },
+                      "type":  "@n8n/n8n-nodes-langchain.agent",
+                      "typeVersion":  3.1,
+                      "position":  [
+                                       -7024,
+                                       -720
+                                   ],
+                      "id":  "3c673914-a869-4e25-8ab3-4d2e373d6ecb",
+                      "name":  "AI Agent"
+                  },
+                  {
+                      "parameters":  {
+                                         "model":  "meta-llama/llama-3.3-70b-instruct",
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "type":  "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+                      "typeVersion":  1,
+                      "position":  [
+                                       -7088,
+                                       -496
+                                   ],
+                      "id":  "1103b75f-9699-437b-92d1-ce0309a37bfd",
+                      "name":  "OpenRouter Chat Model",
+                      "credentials":  {
+                                          "openRouterApi":  {
+                                                                "id":  "6YC5T0IF4MpLn3zg",
+                                                                "name":  "OpenRouter account"
+                                                            }
+                                      }
+                  },
+                  {
+                      "parameters":  {
+
+                                     },
+                      "type":  "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+                      "typeVersion":  1.3,
+                      "position":  [
+                                       -6944,
+                                       -496
+                                   ],
+                      "id":  "3112ced6-dd72-42fd-ae50-8d91f7308023",
+                      "name":  "Simple Memory"
+                  },
+                  {
+                      "parameters":  {
+                                         "mode":  "retrieve-as-tool",
+                                         "toolDescription":  "Busca solo informacion de la base de conocimiento del cliente actual. Usa exclusivamente documentos cuyo metadata.client_id coincida con el client_id de la conversacion.",
+                                         "tableName":  {
+                                                           "__rl":  true,
+                                                           "value":  "documents",
+                                                           "mode":  "list",
+                                                           "cachedResultName":  "documents"
+                                                       },
+                                         "options":  {
+                                                         "queryName":  "match_documents"
+                                                     }
+                                     },
+                      "type":  "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+                      "typeVersion":  1.3,
+                      "position":  [
+                                       -6752,
+                                       -464
+                                   ],
+                      "id":  "bbe1c328-c174-4553-a200-d01f9cd28086",
+                      "name":  "Supabase Vector Store",
+                      "credentials":  {
+                                          "supabaseApi":  {
+                                                              "id":  "Nn0VgGHP4LJgHBd2",
+                                                              "name":  "Supabase account"
+                                                          }
+                                      }
+                  },
+                  {
+                      "parameters":  {
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "type":  "@n8n/n8n-nodes-langchain.embeddingsHuggingFaceInference",
+                      "typeVersion":  1,
+                      "position":  [
+                                       -6736,
+                                       -288
+                                   ],
+                      "id":  "a7890915-6b75-4562-b76d-a4c9637b8636",
+                      "name":  "Embeddings HuggingFace Inference",
+                      "credentials":  {
+                                          "huggingFaceApi":  {
+                                                                 "id":  "MyTArumvnxPB54oE",
+                                                                 "name":  "HuggingFaceApi account"
+                                                             }
+                                      }
+                  },
+                  {
+                      "parameters":  {
+                                         "jsCode":  "const prep = $(\u0027Extraer Datos Entrada1\u0027).first().json;\nconst sessionId = prep.sessionId;\nconst clientId = prep.clientId || prep.client_id || \u0027\u0027;\nconst companyName = prep.companyName || prep.company_name || \u0027la empresa\u0027;\nconst agentRaw = ($json.output || \u0027\u0027).trim();\nconst agentLimpio = agentRaw.replace(/LEAD_CAPTURED[\\s\\S]*/gi, \u0027\u0027).trim();\n\nreturn [{ json: { ...$json, sessionId, clientId, client_id: clientId, companyName, company_name: companyName, agentLimpio } }];"
+                                     },
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       -6656,
+                                       -720
+                                   ],
+                      "id":  "311de1c2-2172-44ba-a048-a14ac5ba3f69",
+                      "name":  "Preparar Respuesta Agente1"
+                  },
+                  {
+                      "parameters":  {
+                                         "tableId":  "chat_sessions",
+                                         "fieldsUi":  {
+                                                          "fieldValues":  [
+                                                                              {
+                                                                                  "fieldId":  "client_id",
+                                                                                  "fieldValue":  "={{ $json.clientId || $json.client_id }}"
+                                                                              },
+                                                                              {
+                                                                                  "fieldId":  "session_id",
+                                                                                  "fieldValue":  "={{ $json.sessionId }}"
+                                                                              },
+                                                                              {
+                                                                                  "fieldId":  "role",
+                                                                                  "fieldValue":  "assistant"
+                                                                              },
+                                                                              {
+                                                                                  "fieldId":  "content",
+                                                                                  "fieldValue":  "={{ $json.agentLimpio }}"
+                                                                              },
+                                                                              {
+                                                                                  "fieldId":  "created_at",
+                                                                                  "fieldValue":  "={{ new Date().toISOString() }}"
+                                                                              }
+                                                                          ]
+                                                      }
+                                     },
+                      "type":  "n8n-nodes-base.supabase",
+                      "typeVersion":  1,
+                      "position":  [
+                                       -6448,
+                                       -720
+                                   ],
+                      "id":  "6145747d-7a02-4db7-8dec-8e66856db66e",
+                      "name":  "Guardar Respuesta Agente1",
+                      "credentials":  {
+                                          "supabaseApi":  {
+                                                              "id":  "Nn0VgGHP4LJgHBd2",
+                                                              "name":  "Supabase account"
+                                                          }
+                                      }
+                  },
+                  {
+                      "parameters":  {
+                                         "jsCode":  "const rawOutput = ($(\u0027Preparar Respuesta Agente1\u0027).first().json.output || \u0027\u0027).trim();\nconst prep = $(\u0027Extraer Datos Entrada1\u0027).first().json;\nconst clientMeta = {\n  clientId: prep.clientId,\n  client_id: prep.client_id,\n  companyName: prep.companyName,\n  company_name: prep.company_name\n};\n\nif (!rawOutput) {\n  return [{ json: { output: \u0027Solicitud recibida. Â¿En quÃ© mÃ¡s puedo ayudarte?\u0027, hasLead: false, ...clientMeta } }];\n}\n\nconst corteIndex = rawOutput.search(/LEAD_CAPTURED\\s*[:({]/);\nlet cleanOutput = rawOutput;\nlet leadPart = null;\n\nif (corteIndex !== -1) {\n  cleanOutput = rawOutput.substring(0, corteIndex).trim();\n  leadPart = rawOutput.substring(corteIndex).trim();\n}\n\ncleanOutput = cleanOutput\n  .replace(/LEAD_CAPTURED[\\s\\S]*/gi, \u0027\u0027)\n  .replace(/\\{[\\s\\S]*\"nombre\"[\\s\\S]*\\}/gi, \u0027\u0027)\n  .trim();\n\nif (/^[\\[{]/.test(cleanOutput)) cleanOutput = \u0027\u0027;\n\nif (leadPart) {\n  try {\n    const jsonMatch = leadPart.match(/\\{[\\s\\S]*\\}/);\n    if (jsonMatch) {\n      const leadData = JSON.parse(jsonMatch[0]);\n      const nombre   = (leadData.nombre   || \u0027\u0027).replace(/[\\[\\]]/g, \u0027\u0027).trim();\n      const email    = (leadData.email    || \u0027\u0027).replace(/[\\[\\]]/g, \u0027\u0027).trim();\n      const telefono = (leadData.telefono || \u0027\u0027).replace(/[\\[\\]]/g, \u0027\u0027).trim();\n\n      const tieneplaceholders = [\u0027[nombre]\u0027,\u0027[email]\u0027,\u0027[telefono]\u0027,\u0027[nombre real]\u0027,\u0027[email real]\u0027,\u0027[telefono real]\u0027]\n        .some(p =\u003e nombre.toLowerCase() === p || email.toLowerCase() === p || telefono.toLowerCase() === p);\n\n      const esValido = !tieneplaceholders\n        \u0026\u0026 nombre.length \u003e 1\n        \u0026\u0026 (/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email) || telefono.replace(/\\D/g, \u0027\u0027).length \u003e= 6);\n\n      if (esValido) {\n        if (!cleanOutput) {\n          cleanOutput = `Perfecto, ${nombre}. Ya lo tenemos apuntado, te contactamos en breve. Cualquier duda, aquÃ­ estoy.`;\n        }\n        return [{\n          json: {\n            output: cleanOutput,\n            hasLead: true,\n            ...clientMeta,\n            lead: {\n              nombre,\n              email,\n              telefono,\n              producto_interes: (leadData.producto_interes || \u0027General\u0027).replace(/[\\[\\]]/g, \u0027\u0027).trim(),\n              contexto:         (leadData.contexto || \u0027\u0027).trim(),\n              origen:           (leadData.origen || \u0027chatbot\u0027).trim(),\n              timestamp:        leadData.timestamp || new Date().toISOString()\n            }\n          }\n        }];\n      }\n    }\n  } catch (e) {}\n}\n\nreturn [{ json: { output: cleanOutput || \u0027Disculpa, Â¿en quÃ© mÃ¡s puedo ayudarte?\u0027, hasLead: false, ...clientMeta } }];"
+                                     },
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       -6224,
+                                       -720
+                                   ],
+                      "id":  "12c1ba20-ac1c-4c31-92a5-5188ca7acecb",
+                      "name":  "Detectar Lead"
+                  },
+                  {
+                      "parameters":  {
+                                         "conditions":  {
+                                                            "options":  {
+                                                                            "caseSensitive":  true,
+                                                                            "leftValue":  "",
+                                                                            "typeValidation":  "strict",
+                                                                            "version":  3
+                                                                        },
+                                                            "conditions":  [
+                                                                               {
+                                                                                   "id":  "cond-lead-001",
+                                                                                   "leftValue":  "={{ $json.hasLead }}",
+                                                                                   "rightValue":  true,
+                                                                                   "operator":  {
+                                                                                                    "type":  "boolean",
+                                                                                                    "operation":  "equals"
+                                                                                                }
+                                                                               }
+                                                                           ],
+                                                            "combinator":  "and"
+                                                        },
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "type":  "n8n-nodes-base.if",
+                      "typeVersion":  2.3,
+                      "position":  [
+                                       -6000,
+                                       -720
+                                   ],
+                      "id":  "3da470d4-5adc-4318-b7ad-398b77375533",
+                      "name":  "Â¿Hay Lead?"
+                  },
+                  {
+                      "parameters":  {
+                                         "jsCode":  "const detected = Detectar Lead.first().json;\nconst prep = Extraer Datos Entrada1.first().json;\nconst lead = detected.lead || {};\n\nreturn [{\n  json: {\n    ...detected,\n    sessionId: prep.sessionId,\n    clientId: prep.clientId || prep.client_id,\n    client_id: prep.clientId || prep.client_id,\n    companyName: prep.companyName || prep.company_name,\n    company_name: prep.companyName || prep.company_name,\n    lead\n  }\n}];"
+                                     },
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       -5776,
+                                       -720
+                                   ],
+                      "id":  "a7f4c270-2bdb-4028-82a1-17b52ca64e35",
+                      "name":  "Preparar Lead Local"
+                  },
+                  {
+                      "parameters":  {
+                                         "jsCode":  "const lead = Preparar Lead Local.first().json.lead;\nconst respuesta = $json;\n\nreturn [{\n  json: {\n    client_id:        Preparar Lead Local.first().json.clientId || Preparar Lead Local.first().json.client_id,\n    nombre:           lead.nombre,\n    email:            lead.email,\n    telefono:         lead.telefono,\n    producto_interes: lead.producto_interes || \u0027General\u0027,\n    contexto:         lead.contexto || \u0027\u0027,\n    origen:           lead.origen || \u0027chatbot\u0027,\n    estado:           \u0027OK\u0027,\n    error_detalle:    null,\n    respuesta_api:    JSON.stringify(respuesta)\n  }\n}];"
+                                     },
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       -5328,
+                                       -816
+                                   ],
+                      "id":  "93eb7b19-64dc-46df-94db-74df1f0dda9d",
+                      "name":  "Preparar Log OK"
+                  },
+                  {
+                      "parameters":  {
+                                         "tableId":  "lead_logs",
+                                         "fieldsUi":  {
+                                                          "fieldValues":  [
+                                                                              {
+                                                                                  "fieldId":  "client_id",
+                                                                                  "fieldValue":  "={{ $json.client_id }}"
+                                                                              },
+                                                                              {
+                                                                                  "fieldId":  "nombre",
+                                                                                  "fieldValue":  "={{ $json.nombre }}"
+                                                                              },
+                                                                              {
+                                                                                  "fieldId":  "email",
+                                                                                  "fieldValue":  "={{ $json.email }}"
+                                                                              },
+                                                                              {
+                                                                                  "fieldId":  "telefono",
+                                                                                  "fieldValue":  "={{ $json.telefono }}"
+                                                                              },
+                                                                              {
+                                                                                  "fieldId":  "producto_interes",
+                                                                                  "fieldValue":  "={{ $json.producto_interes }}"
+                                                                              },
+                                                                              {
+                                                                                  "fieldId":  "contexto",
+                                                                                  "fieldValue":  "={{ $json.contexto }}"
+                                                                              },
+                                                                              {
+                                                                                  "fieldId":  "origen",
+                                                                                  "fieldValue":  "={{ $json.origen }}"
+                                                                              },
+                                                                              {
+                                                                                  "fieldId":  "estado",
+                                                                                  "fieldValue":  "={{ $json.estado }}"
+                                                                              },
+                                                                              {
+                                                                                  "fieldId":  "error_detalle",
+                                                                                  "fieldValue":  "={{ $json.error_detalle }}"
+                                                                              },
+                                                                              {
+                                                                                  "fieldId":  "respuesta_api",
+                                                                                  "fieldValue":  "={{ $json.respuesta_api }}"
+                                                                              }
+                                                                          ]
+                                                      }
+                                     },
+                      "type":  "n8n-nodes-base.supabase",
+                      "typeVersion":  1,
+                      "position":  [
+                                       -5104,
+                                       -816
+                                   ],
+                      "id":  "a2faeb78-b597-4c31-b379-b4628d8c8a12",
+                      "name":  "Log OK en Supabase",
+                      "credentials":  {
+                                          "supabaseApi":  {
+                                                              "id":  "Nn0VgGHP4LJgHBd2",
+                                                              "name":  "Supabase account"
+                                                          }
+                                      }
+                  },
+                  {
+                      "parameters":  {
+                                         "jsCode":  "const prep = $(\u0027Extraer Datos Entrada1\u0027).first().json;\nconst sessionId = prep.sessionId;\nconst clientId = prep.clientId || prep.client_id || \u0027\u0027;\nconst companyName = prep.companyName || prep.company_name || \u0027la empresa\u0027;\nconst logData = $(\u0027Preparar Log OK\u0027).first().json || {};\n\nconst leadNombre = logData.nombre           || \u0027Desconocido\u0027;\nconst leadEmail  = logData.email            || \u0027\u0027;\nconst leadTel    = logData.telefono         || \u0027\u0027;\nconst leadProd   = logData.producto_interes || \u0027General\u0027;\nconst leadCtx    = logData.contexto         || \u0027\u0027;\n\nreturn [{ json: { sessionId, clientId, client_id: clientId, companyName, company_name: companyName, leadNombre, leadEmail, leadTel, leadProd, leadCtx } }];"
+                                     },
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       -4880,
+                                       -816
+                                   ],
+                      "id":  "9d48c836-16a0-4771-ad0c-6f870e18899d",
+                      "name":  "Preparar Datos Transcript1"
+                  },
+                  {
+                      "parameters":  {
+                                         "operation":  "getAll",
+                                         "tableId":  "chat_sessions",
+                                         "filters":  {
+                                                         "conditions":  [
+                                                                            {
+                                                                                "keyName":  "client_id",
+                                                                                "condition":  "eq",
+                                                                                "keyValue":  "={{ $json.clientId || $json.client_id }}"
+                                                                            },
+                                                                            {
+                                                                                "keyName":  "session_id",
+                                                                                "condition":  "eq",
+                                                                                "keyValue":  "={{ $json.sessionId }}"
+                                                                            }
+                                                                        ]
+                                                     }
+                                     },
+                      "type":  "n8n-nodes-base.supabase",
+                      "typeVersion":  1,
+                      "position":  [
+                                       -4656,
+                                       -816
+                                   ],
+                      "id":  "fd1edbac-aa3d-4c38-81a4-3f6aa1e4551f",
+                      "name":  "Leer Historial de Supabase1",
+                      "credentials":  {
+                                          "supabaseApi":  {
+                                                              "id":  "Nn0VgGHP4LJgHBd2",
+                                                              "name":  "Supabase account"
+                                                          }
+                                      }
+                  },
+                  {
+                      "parameters":  {
+                                         "jsCode":  "const prepData = $(\u0027Preparar Datos Transcript1\u0027).first().json;\nconst clientId = prepData.clientId || prepData.client_id || \u0027\u0027;\nconst companyName = prepData.companyName || prepData.company_name || \u0027la empresa\u0027;\nconst leadNombre = prepData.leadNombre;\nconst leadEmail  = prepData.leadEmail;\nconst leadTel    = prepData.leadTel;\nconst leadProd   = prepData.leadProd;\nconst leadCtx    = prepData.leadCtx;\n\nconst items = $input.all();\nconst historia = items.map(item =\u003e item.json).filter(m =\u003e m.role \u0026\u0026 m.content);\n\nconst now          = new Date();\nconst timestamp    = now.toISOString();\nconst fechaLegible = now.toLocaleString(\u0027es-ES\u0027, { timeZone: \u0027Europe/Madrid\u0027 });\nconst fileTimestamp = timestamp.replace(/[:.]/g, \u0027-\u0027).replace(\u0027T\u0027, \u0027_\u0027).slice(0, 19);\n\nfunction esc(str) {\n  return String(str || \u0027\u0027)\n    .replace(/\u0026/g, \u0027\u0026amp;\u0027)\n    .replace(/\u003c/g, \u0027\u0026lt;\u0027)\n    .replace(/\u003e/g, \u0027\u0026gt;\u0027)\n    .replace(/\"/g, \u0027\u0026quot;\u0027)\n    .replace(/\\n/g, \u0027\u003cbr\u003e\u0027);\n}\n\nconst mensajesHtml = historia.length\n  ? historia.map(msg =\u003e {\n      const isUser  = msg.role === \u0027user\u0027;\n      const label   = isUser ? \u0027ðŸ‘¤ Usuario\u0027 : \u0027ðŸ¤– Asistente\u0027;\n      const bgColor = isUser ? \u0027#EEF2FF\u0027 : \u0027#F0FDF4\u0027;\n      const border  = isUser ? \u0027#818CF8\u0027 : \u0027#4ADE80\u0027;\n      const labelClr = isUser ? \u0027#3730A3\u0027 : \u0027#166534\u0027;\n      const hora    = msg.created_at\n        ? new Date(msg.created_at).toLocaleTimeString(\u0027es-ES\u0027, { timeZone: \u0027Europe/Madrid\u0027, hour: \u00272-digit\u0027, minute: \u00272-digit\u0027 })\n        : \u0027\u0027;\n      return `\n  \u003cdiv style=\"margin-bottom:14px;padding:14px 18px;background:${bgColor};border-left:4px solid ${border};border-radius:0 8px 8px 0;\"\u003e\n    \u003cdiv style=\"display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;\"\u003e\n      \u003cspan style=\"font-size:11px;font-weight:700;color:${labelClr};text-transform:uppercase;letter-spacing:.05em;\"\u003e${label}\u003c/span\u003e\n      ${hora ? `\u003cspan style=\"font-size:11px;color:#9CA3AF;\"\u003e${hora}\u003c/span\u003e` : \u0027\u0027}\n    \u003c/div\u003e\n    \u003cdiv style=\"font-size:14px;line-height:1.7;color:#1F2937;\"\u003e${esc(msg.content)}\u003c/div\u003e\n  \u003c/div\u003e`;\n    }).join(\u0027\u0027)\n  : \u0027\u003cp style=\"color:#6B7280;font-style:italic;\"\u003eNo hay mensajes en el historial.\u003c/p\u003e\u0027;\n\nconst fichaLead = `\n  \u003cdiv style=\"margin-top:28px;padding:18px 20px;background:#FFF7ED;border:1px solid #FED7AA;border-radius:8px;\"\u003e\n    \u003cdiv style=\"font-size:11px;font-weight:700;color:#92400E;text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px;\"\u003eðŸ“‹ Datos del lead capturado\u003c/div\u003e\n    \u003ctable style=\"width:100%;border-collapse:collapse;font-size:13px;\"\u003e\n      \u003ctr\u003e\u003ctd style=\"padding:5px 12px 5px 0;color:#6B7280;width:130px;\"\u003eNombre\u003c/td\u003e\u003ctd style=\"padding:5px 0;color:#111827;font-weight:500;\"\u003e${esc(leadNombre)}\u003c/td\u003e\u003c/tr\u003e\n      \u003ctr\u003e\u003ctd style=\"padding:5px 12px 5px 0;color:#6B7280;\"\u003eEmail\u003c/td\u003e\u003ctd style=\"padding:5px 0;color:#111827;\"\u003e${esc(leadEmail)}\u003c/td\u003e\u003c/tr\u003e\n      \u003ctr\u003e\u003ctd style=\"padding:5px 12px 5px 0;color:#6B7280;\"\u003eTelÃ©fono\u003c/td\u003e\u003ctd style=\"padding:5px 0;color:#111827;\"\u003e${esc(leadTel)}\u003c/td\u003e\u003c/tr\u003e\n      \u003ctr\u003e\u003ctd style=\"padding:5px 12px 5px 0;color:#6B7280;\"\u003eProducto\u003c/td\u003e\u003ctd style=\"padding:5px 0;color:#111827;\"\u003e${esc(leadProd)}\u003c/td\u003e\u003c/tr\u003e\n      ${leadCtx ? `\u003ctr\u003e\u003ctd style=\"padding:5px 12px 5px 0;color:#6B7280;\"\u003eContexto\u003c/td\u003e\u003ctd style=\"padding:5px 0;color:#111827;\"\u003e${esc(leadCtx)}\u003c/td\u003e\u003c/tr\u003e` : \u0027\u0027}\n    \u003c/table\u003e\n  \u003c/div\u003e`;\n\nconst html = `\u003c!DOCTYPE html\u003e\n\u003chtml lang=\"es\"\u003e\n\u003chead\u003e\n  \u003cmeta charset=\"UTF-8\"\u003e\n  \u003cmeta name=\"viewport\" content=\"width=device-width,initial-scale=1.0\"\u003e\n  \u003ctitle\u003eTranscript â€“ Aicor Chatbot\u003c/title\u003e\n  \u003cstyle\u003e\n    *{box-sizing:border-box;margin:0;padding:0}\n    body{font-family:-apple-system,BlinkMacSystemFont,\u0027Segoe UI\u0027,Roboto,sans-serif;background:#F9FAFB;color:#111827;padding:32px 16px}\n    .wrap{max-width:780px;margin:0 auto;background:#fff;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,.12);overflow:hidden}\n    .hdr{background:linear-gradient(135deg,#1E40AF,#2563EB);color:#fff;padding:28px 32px}\n    .hdr h1{font-size:20px;font-weight:600;margin-bottom:8px}\n    .hdr p{font-size:13px;opacity:.85;line-height:1.8;margin:0}\n    .body{padding:28px 32px}\n    .sec{font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.08em;margin-bottom:16px;padding-bottom:8px;border-bottom:1px solid #E5E7EB}\n    .foot{background:#F3F4F6;padding:14px 32px;font-size:11px;color:#9CA3AF;border-top:1px solid #E5E7EB}\n  \u003c/style\u003e\n\u003c/head\u003e\n\u003cbody\u003e\n  \u003cdiv class=\"wrap\"\u003e\n    \u003cdiv class=\"hdr\"\u003e\n      \u003ch1\u003eðŸ“‹ Transcript de conversaciÃ³n\u003c/h1\u003e\n      \u003cp\u003e\n        ðŸ• ${fechaLegible}\u003cbr\u003e\n        ðŸ‘¤ Lead: ${esc(leadNombre)}${leadEmail ? \u0027 \u0026lt;\u0027 + esc(leadEmail) + \u0027\u0026gt;\u0027 : \u0027\u0027}\u003cbr\u003e\n        ðŸ“¨ Total mensajes: ${historia.length}\n      \u003c/p\u003e\n    \u003c/div\u003e\n    \u003cdiv class=\"body\"\u003e\n      \u003cdiv class=\"sec\"\u003eConversaciÃ³n completa\u003c/div\u003e\n      ${mensajesHtml}\n      ${fichaLead}\n    \u003c/div\u003e\n    \u003cdiv class=\"foot\"\u003eGenerado automÃ¡ticamente por Aicor Chatbot \u0026middot; ${timestamp}\u003c/div\u003e\n  \u003c/div\u003e\n\u003c/body\u003e\n\u003c/html\u003e`;\n\nreturn [{\n  json: {\n    html_content:  html,\n    file_name:     `transcript_${fileTimestamp}.html`,\n    client_id:     clientId,\n    company_name:  companyName,\n    lead_nombre:   leadNombre,\n    lead_email:    leadEmail,\n    created_at:    timestamp,\n    message_count: historia.length,\n    storage_path:  `chatbot/${clientId}/transcript_${fileTimestamp}.html`\n  }\n}];"
+                                     },
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       -4432,
+                                       -816
+                                   ],
+                      "id":  "3a9aa2f8-ade5-4478-ad62-bcd1ca054dcd",
+                      "name":  "Generate HTML Transcript"
+                  },
+                  {
+                      "parameters":  {
+                                         "method":  "POST",
+                                         "url":  "={{ $env.SUPABASE_URL }}/storage/v1/object/transcripts/{{ $json.storage_path }}",
+                                         "sendHeaders":  true,
+                                         "specifyHeaders":  "json",
+                                         "jsonHeaders":  "={\n  \"Authorization\": \"Bearer \" + $env.SUPABASE_SERVICE_ROLE_KEY,\n  \"Content-Type\": \"text/html; charset=utf-8\",\n  \"x-upsert\": \"true\"\n}",
+                                         "sendBody":  true,
+                                         "contentType":  "raw",
+                                         "rawContentType":  "text/html; charset=utf-8",
+                                         "body":  "={{ $json.html_content }}",
+                                         "options":  {
+                                                         "response":  {
+                                                                          "response":  {
+                                                                                           "fullResponse":  true,
+                                                                                           "responseFormat":  "json"
+                                                                                       }
+                                                                      }
+                                                     }
+                                     },
+                      "type":  "n8n-nodes-base.httpRequest",
+                      "typeVersion":  4.1,
+                      "position":  [
+                                       -4208,
+                                       -816
+                                   ],
+                      "id":  "0884d5fa-fa69-43a1-b093-948628eee66f",
+                      "name":  "Upload to Supabase",
+                      "onError":  "continueErrorOutput"
+                  },
+                  {
+                      "parameters":  {
+                                         "jsCode":  "const uploadResponse = $json;\nconst prevData = $(\u0027Generate HTML Transcript\u0027).first().json;\nconst storagePath = prevData.storage_path;\nconst supabaseUrl = (process.env.SUPABASE_URL || \"\").replace(/\\/$/, \"\");\nconst publicUrl   = `${supabaseUrl}/storage/v1/object/public/transcripts/${storagePath}`;\nconst uploadOk    = uploadResponse.statusCode \u003e= 200 \u0026\u0026 uploadResponse.statusCode \u003c 300;\nconst leadData    = $(\u0027Preparar Lead Local\u0027).first().json.lead || {};\n\nreturn [{\n  json: {\n    client_id:       prevData.client_id,\n    file_url:        uploadOk ? publicUrl : null,\n    storage_path:    storagePath,\n    file_name:       prevData.file_name,\n    lead_nombre:     prevData.lead_nombre,\n    lead_email:      prevData.lead_email,\n    message_count:   prevData.message_count,\n    created_at:      prevData.created_at,\n    upload_status:   uploadOk ? \u0027OK\u0027 : \u0027ERROR\u0027,\n    upload_response: JSON.stringify(uploadResponse),\n    hasLead: true,\n    lead: leadData\n  }\n}];"
+                                     },
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       -3984,
+                                       -832
+                                   ],
+                      "id":  "2da45a83-6a4a-4881-be72-cb2294cc3af7",
+                      "name":  "Prepare Transcript Metadata"
+                  },
+                  {
+                      "parameters":  {
+                                         "tableId":  "transcript_logs",
+                                         "fieldsUi":  {
+                                                          "fieldValues":  [
+                                                                              {
+                                                                                  "fieldId":  "client_id",
+                                                                                  "fieldValue":  "={{ $json.client_id }}"
+                                                                              },
+                                                                              {
+                                                                                  "fieldId":  "file_url",
+                                                                                  "fieldValue":  "={{ $json.file_url }}"
+                                                                              },
+                                                                              {
+                                                                                  "fieldId":  "storage_path",
+                                                                                  "fieldValue":  "={{ $json.storage_path }}"
+                                                                              },
+                                                                              {
+                                                                                  "fieldId":  "file_name",
+                                                                                  "fieldValue":  "={{ $json.file_name }}"
+                                                                              },
+                                                                              {
+                                                                                  "fieldId":  "lead_nombre",
+                                                                                  "fieldValue":  "={{ $json.lead_nombre }}"
+                                                                              },
+                                                                              {
+                                                                                  "fieldId":  "lead_email",
+                                                                                  "fieldValue":  "={{ $json.lead_email }}"
+                                                                              },
+                                                                              {
+                                                                                  "fieldId":  "message_count",
+                                                                                  "fieldValue":  "={{ $json.message_count }}"
+                                                                              },
+                                                                              {
+                                                                                  "fieldId":  "created_at",
+                                                                                  "fieldValue":  "={{ $json.created_at }}"
+                                                                              },
+                                                                              {
+                                                                                  "fieldId":  "upload_status",
+                                                                                  "fieldValue":  "={{ $json.upload_status }}"
+                                                                              },
+                                                                              {
+                                                                                  "fieldId":  "upload_response",
+                                                                                  "fieldValue":  "={{ $json.upload_response }}"
+                                                                              }
+                                                                          ]
+                                                      }
+                                     },
+                      "type":  "n8n-nodes-base.supabase",
+                      "typeVersion":  1,
+                      "position":  [
+                                       -3824,
+                                       -832
+                                   ],
+                      "id":  "2ffeb149-badc-4030-838a-b66fe45c8fbd",
+                      "name":  "Save Transcript Metadata",
+                      "credentials":  {
+                                          "supabaseApi":  {
+                                                              "id":  "Nn0VgGHP4LJgHBd2",
+                                                              "name":  "Supabase account"
+                                                          }
+                                      }
+                  },
+                  {
+                      "parameters":  {
+                                         "mode":  "raw",
+                                         "jsonOutput":  "={{ { output: $json.hasLead ? \"Perfecto, \" + (($json.lead \u0026\u0026 $json.lead.nombre) || $json.lead_nombre || \"\").trim() + \". Ya lo tenemos apuntado, te contactamos en breve. Cualquier duda, aquí estoy.\" : ($json.output || \"Solicitud recibida. ¿En qué más puedo ayudarte?\"), hasLead: $json.hasLead === true, lead: $json.lead || null } }}",
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "type":  "n8n-nodes-base.set",
+                      "typeVersion":  3.4,
+                      "position":  [
+                                       -2672,
+                                       -832
+                                   ],
+                      "id":  "68c196ef-39b3-41ce-a857-47d4312e52a2",
+                      "name":  "Respuesta Final OK1"
+                  },
+                  {
+                      "parameters":  {
+                                         "jsCode":  "const clientId = $json.clientId || $json.client_id || \u0027\u0027;\nconst companyName = $json.companyName || $json.company_name || \u0027la empresa\u0027;\nconst sessionId = $json.sessionId || (clientId + \u0027:\u0027 + ($execution?.id || \u0027default\u0027));\nconst userMsg   = ($json.userMsg || \u0027\u0027).trim();\nconst msgLower  = userMsg.toLowerCase();\n\nconst BANNED_DOMAINS = [\n  \u0027bit.ly\u0027, \u0027tinyurl.com\u0027, \u0027cutt.ly\u0027, \u0027shorturl.at\u0027,\n  \u0027ow.ly\u0027, \u0027t.co\u0027, \u0027rebrand.ly\u0027, \u0027bl.ink\u0027,\n  \u0027onlyfans.com\u0027, \u0027xvideos.com\u0027, \u0027pornhub.com\u0027,\n  \u0027casino\u0027, \u0027bet365\u0027, \u0027betfair\u0027,\n  \u0027phishing-site.com\u0027\n];\n\nconst BLOCKED_PATTERNS = [\n  /\\b(puta|puto|coÃ±o|hostia|gilipollas|imbÃ©cil|idiota|estupido|subnormal|retrasado|mongolo|maricÃ³n|zorra|perra|bastardo|cabrÃ³n|hdp|hijo de puta|mierda de empresa|asco de empresa)\\b/i,\n  /\\b(te voy a|os voy a|voy a|te vas a|os vais a).{0,30}(matar|pegar|hundir|denunciar|destruir|arruinar|reventar|joder)\\b/i,\n  /\\b(amenaza|amenazas|te arrepentirÃ¡s|me las pagarÃ¡s|ya verÃ¡s|os arrepentirÃ©is)\\b/i,\n  /\\b(buy now|click here|free money|earn (fast|easy|quick)|guaranteed income|work from home|make money fast|crypto investment|double your|100% profit|exclusive offer|limited time offer|act now)\\b/i,\n  /\\b(viagra|cialis|levitra|casino|jackpot|slot machine|free spin|win big|lottery winner|you have been selected)\\b/i,\n  /\\b(ignore (previous|all|your) (instructions?|rules?|prompt)|forget (your|the) (instructions?|rules?|context)|act as (dan|jailbreak|unrestricted|evil)|pretend (you are|to be) (without|no) (restrictions?|limits?|rules?))\\b/i,\n  /https?:\\/\\/[^\\s]{60,}/i,\n  /\\b(\\d{1,3}\\.){3}\\d{1,3}\\b/\n];\n\nconst urlsEnMensaje = msgLower.match(/https?:\\/\\/[^\\s]+|www\\.[^\\s]+|[a-z0-9.-]+\\.(com|es|net|org|io|co|info|biz|xyz|top|club|site|online|shop|store)[^\\s]*/gi) || [];\nconst dominiosBloqueados = urlsEnMensaje.some(url =\u003e BANNED_DOMAINS.some(domain =\u003e url.includes(domain)));\nconst msgDemasiadoLargo = userMsg.length \u003e 800;\n\nlet bloqueado = false;\nlet motivoBloqueo = \u0027\u0027;\n\nif (dominiosBloqueados) { bloqueado = true; motivoBloqueo = \u0027dominio_baneado\u0027; }\nelse if (BLOCKED_PATTERNS.some(p =\u003e p.test(userMsg))) { bloqueado = true; motivoBloqueo = \u0027contenido_bloqueado\u0027; }\nelse if (msgDemasiadoLargo) { bloqueado = true; motivoBloqueo = \u0027mensaje_excesivo\u0027; }\n\nconst respuestasBloqueo = {\n  dominio_baneado:    \u0027Lo siento, no puedo procesar mensajes con ese tipo de enlaces.\u0027,\n  contenido_bloqueado:\u0027Por favor, mantÃ©n un tono respetuoso para que pueda ayudarte.\u0027,\n  mensaje_excesivo:   \u0027El mensaje es demasiado largo. Â¿Puedes resumir tu consulta en pocas frases?\u0027\n};\n\nreturn [{ json: { ...$json, clientId, client_id: clientId, companyName, company_name: companyName, sessionId, userMsg, bloqueado, motivoBloqueo, respuestaBloqueo: bloqueado ? (respuestasBloqueo[motivoBloqueo] || \u0027Mensaje no permitido.\u0027) : null } }];"
+                                     },
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       -8032,
+                                       -704
+                                   ],
+                      "id":  "7857f4dc-ef6a-4242-8b80-7d62ffba9804",
+                      "name":  "Filtro de IntenciÃ³n1"
+                  },
+                  {
+                      "parameters":  {
+                                         "conditions":  {
+                                                            "options":  {
+                                                                            "caseSensitive":  true,
+                                                                            "leftValue":  "",
+                                                                            "typeValidation":  "strict",
+                                                                            "version":  3
+                                                                        },
+                                                            "conditions":  [
+                                                                               {
+                                                                                   "id":  "cond-bloqueado-001",
+                                                                                   "leftValue":  "={{ $json.bloqueado }}",
+                                                                                   "rightValue":  false,
+                                                                                   "operator":  {
+                                                                                                    "type":  "boolean",
+                                                                                                    "operation":  "equals"
+                                                                                                }
+                                                                               }
+                                                                           ],
+                                                            "combinator":  "and"
+                                                        },
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "type":  "n8n-nodes-base.if",
+                      "typeVersion":  2.3,
+                      "position":  [
+                                       -7824,
+                                       -704
+                                   ],
+                      "id":  "b99161d2-dbee-4dfe-9b6e-41a789fbb465",
+                      "name":  "Â¿Mensaje Permitido?1"
+                  },
+                  {
+                      "parameters":  {
+                                         "mode":  "raw",
+                                         "jsonOutput":  "={{ { \"output\": $json.respuestaBloqueo } }}",
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "type":  "n8n-nodes-base.set",
+                      "typeVersion":  3.4,
+                      "position":  [
+                                       -7504,
+                                       -512
+                                   ],
+                      "id":  "5d2f1ee3-dfb8-4d7e-9c5e-8994a7962c05",
+                      "name":  "Respuesta Bloqueado1"
+                  },
+                  {
+                      "parameters":  {
+                                         "public":  true,
+                                         "initialMessages":  "Â¡Hola! Soy el asistente virtual.\nÂ¿CÃ³mo te llamas?",
+                                         "options":  {
+                                                         "allowedOrigins":  "*"
+                                                     }
+                                     },
+                      "type":  "@n8n/n8n-nodes-langchain.chatTrigger",
+                      "typeVersion":  1.4,
+                      "position":  [
+                                       -8512,
+                                       -704
+                                   ],
+                      "id":  "547578f5-8366-42f0-b35f-1fb5c5074c43",
+                      "name":  "When chat message received",
+                      "webhookId":  "48e4053f-83ac-471e-880e-91f47e39b0ee"
+                  }
+              ],
+    "connections":  {
+                        "Extraer Datos Entrada1":  {
+                                                       "main":  [
+                                                                    [
+                                                                        {
+                                                                            "node":  "Filtro de IntenciÃ³n1",
+                                                                            "type":  "main",
+                                                                            "index":  0
+                                                                        }
+                                                                    ]
+                                                                ]
+                                                   },
+                        "Guardar Mensaje Usuario1":  {
+                                                         "main":  [
+                                                                      [
+                                                                          {
+                                                                              "node":  "AI Agent",
+                                                                              "type":  "main",
+                                                                              "index":  0
+                                                                          }
+                                                                      ]
+                                                                  ]
+                                                     },
+                        "AI Agent":  {
+                                         "main":  [
+                                                      [
+                                                          {
+                                                              "node":  "Preparar Respuesta Agente1",
+                                                              "type":  "main",
+                                                              "index":  0
+                                                          }
+                                                      ]
+                                                  ]
+                                     },
+                        "OpenRouter Chat Model":  {
+                                                      "ai_languageModel":  [
+                                                                               [
+                                                                                   {
+                                                                                       "node":  "AI Agent",
+                                                                                       "type":  "ai_languageModel",
+                                                                                       "index":  0
+                                                                                   }
+                                                                               ]
+                                                                           ]
+                                                  },
+                        "Simple Memory":  {
+                                              "ai_memory":  [
+                                                                [
+                                                                    {
+                                                                        "node":  "AI Agent",
+                                                                        "type":  "ai_memory",
+                                                                        "index":  0
+                                                                    }
+                                                                ]
+                                                            ]
+                                          },
+                        "Supabase Vector Store":  {
+                                                      "ai_tool":  [
+                                                                      [
+                                                                          {
+                                                                              "node":  "AI Agent",
+                                                                              "type":  "ai_tool",
+                                                                              "index":  0
+                                                                          }
+                                                                      ]
+                                                                  ]
+                                                  },
+                        "Embeddings HuggingFace Inference":  {
+                                                                 "ai_embedding":  [
+                                                                                      [
+                                                                                          {
+                                                                                              "node":  "Supabase Vector Store",
+                                                                                              "type":  "ai_embedding",
+                                                                                              "index":  0
+                                                                                          }
+                                                                                      ]
+                                                                                  ]
+                                                             },
+                        "Preparar Respuesta Agente1":  {
+                                                           "main":  [
+                                                                        [
+                                                                            {
+                                                                                "node":  "Guardar Respuesta Agente1",
+                                                                                "type":  "main",
+                                                                                "index":  0
+                                                                            }
+                                                                        ]
+                                                                    ]
+                                                       },
+                        "Guardar Respuesta Agente1":  {
+                                                          "main":  [
+                                                                       [
+                                                                           {
+                                                                               "node":  "Detectar Lead",
+                                                                               "type":  "main",
+                                                                               "index":  0
+                                                                           }
+                                                                       ]
+                                                                   ]
+                                                      },
+                        "Detectar Lead":  {
+                                              "main":  [
+                                                           [
+                                                               {
+                                                                   "node":  "Â¿Hay Lead?",
+                                                                   "type":  "main",
+                                                                   "index":  0
+                                                               }
+                                                           ]
+                                                       ]
+                                          },
+                        "Â¿Hay Lead?":  {
+                                            "main":  [
+                                                         [
+                                                             {
+                                                                 "node":  "Preparar Lead Local",
+                                                                 "type":  "main",
+                                                                 "index":  0
+                                                             }
+                                                         ],
+                                                         [
+                                                             {
+                                                                 "node":  "Respuesta Final OK1",
+                                                                 "type":  "main",
+                                                                 "index":  0
+                                                             }
+                                                         ]
+                                                     ]
+                                        },
+                        "Preparar Log OK":  {
+                                                "main":  [
+                                                             [
+                                                                 {
+                                                                     "node":  "Log OK en Supabase",
+                                                                     "type":  "main",
+                                                                     "index":  0
+                                                                 }
+                                                             ]
+                                                         ]
+                                            },
+                        "Log OK en Supabase":  {
+                                                   "main":  [
+                                                                [
+                                                                    {
+                                                                        "node":  "Preparar Datos Transcript1",
+                                                                        "type":  "main",
+                                                                        "index":  0
+                                                                    }
+                                                                ]
+                                                            ]
+                                               },
+                        "Preparar Datos Transcript1":  {
+                                                           "main":  [
+                                                                        [
+                                                                            {
+                                                                                "node":  "Leer Historial de Supabase1",
+                                                                                "type":  "main",
+                                                                                "index":  0
+                                                                            }
+                                                                        ]
+                                                                    ]
+                                                       },
+                        "Leer Historial de Supabase1":  {
+                                                            "main":  [
+                                                                         [
+                                                                             {
+                                                                                 "node":  "Generate HTML Transcript",
+                                                                                 "type":  "main",
+                                                                                 "index":  0
+                                                                             }
+                                                                         ]
+                                                                     ]
+                                                        },
+                        "Generate HTML Transcript":  {
+                                                         "main":  [
+                                                                      [
+                                                                          {
+                                                                              "node":  "Upload to Supabase",
+                                                                              "type":  "main",
+                                                                              "index":  0
+                                                                          }
+                                                                      ]
+                                                                  ]
+                                                     },
+                        "Upload to Supabase":  {
+                                                   "main":  [
+                                                                [
+                                                                    {
+                                                                        "node":  "Prepare Transcript Metadata",
+                                                                        "type":  "main",
+                                                                        "index":  0
+                                                                    }
+                                                                ]
+                                                            ]
+                                               },
+                        "Prepare Transcript Metadata":  {
+                                                            "main":  [
+                                                                         [
+                                                                             {
+                                                                                 "node":  "Save Transcript Metadata",
+                                                                                 "type":  "main",
+                                                                                 "index":  0
+                                                                             },
+                                                                             {
+                                                                                 "node":  "Respuesta Final OK1",
+                                                                                 "type":  "main",
+                                                                                 "index":  0
+                                                                             }
+                                                                         ]
+                                                                     ]
+                                                        },
+                        "Filtro de IntenciÃ³n1":  {
+                                                      "main":  [
+                                                                   [
+                                                                       {
+                                                                           "node":  "Â¿Mensaje Permitido?1",
+                                                                           "type":  "main",
+                                                                           "index":  0
+                                                                       }
+                                                                   ]
+                                                               ]
+                                                  },
+                        "Â¿Mensaje Permitido?1":  {
+                                                      "main":  [
+                                                                   [
+                                                                       {
+                                                                           "node":  "Guardar Mensaje Usuario1",
+                                                                           "type":  "main",
+                                                                           "index":  0
+                                                                       }
+                                                                   ],
+                                                                   [
+                                                                       {
+                                                                           "node":  "Respuesta Bloqueado1",
+                                                                           "type":  "main",
+                                                                           "index":  0
+                                                                       }
+                                                                   ]
+                                                               ]
+                                                  },
+                        "When chat message received":  {
+                                                           "main":  [
+                                                                        [
+                                                                            {
+                                                                                "node":  "Extraer Datos Entrada1",
+                                                                                "type":  "main",
+                                                                                "index":  0
+                                                                            }
+                                                                        ]
+                                                                    ]
+                                                       },
+                        "Preparar Lead Local":  {
+                                                    "main":  [
+                                                                 [
+                                                                     {
+                                                                         "node":  "Preparar Log OK",
+                                                                         "type":  "main",
+                                                                         "index":  0
+                                                                     }
+                                                                 ]
+                                                             ]
+                                                }
+                    },
+    "pinData":  {
+
+                },
+    "meta":  {
+                 "templateCredsSetupCompleted":  true,
+                 "instanceId":  "83a0c81df85bf9376c9bd1175d07d72f656f294b92807431b3b09acbaccc6d0b"
+             }
+}
+
