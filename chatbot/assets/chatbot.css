@@ -1,0 +1,463 @@
+/* ═══════════════════════════════════════════════════════════════
+   Dgtalit Chatbot n8n  ·  chatbot.css  v2.0.0
+   Variables inyectadas por PHP → window.DGTALIT.cfg
+   Clases con prefijo  dgtalit-*  (sin conflictos con WP)
+═══════════════════════════════════════════════════════════════ */
+
+.dgtalit-chat {
+  --dg-primary:     #1a56db;
+  --dg-accent:      #16a34a;
+  --dg-text:        #0f172a;
+  --dg-surface:     #ffffff;
+  --dg-bottom:      24px;
+  --dg-side:        24px;
+  --dg-width:       380px;
+  --dg-height:      580px;
+
+  --dg-primary-hov:   color-mix(in srgb, var(--dg-primary) 88%, #000);
+  --dg-primary-faint: color-mix(in srgb, var(--dg-primary) 8%, transparent);
+  --dg-primary-ring:  color-mix(in srgb, var(--dg-primary) 22%, transparent);
+  --dg-accent-hov:    color-mix(in srgb, var(--dg-accent) 88%, #000);
+  --dg-border:        rgba(15,23,42,.09);
+  --dg-border-md:     rgba(15,23,42,.16);
+  --dg-bg-chat:       #f1f5f9;
+  --dg-bg-form:       #f8fafc;
+
+  --dg-font:      -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
+  --dg-radius:    16px;
+  --dg-radius-md: 11px;
+  --dg-radius-sm:  8px;
+
+  --dg-shadow-panel:
+    0 0 0 1px rgba(15,23,42,.07),
+    0 8px 24px -4px rgba(15,23,42,.13),
+    0 32px 64px -12px rgba(15,23,42,.18);
+  --dg-shadow-btn:
+    0 1px 2px rgba(15,23,42,.07),
+    0 4px 12px -2px color-mix(in srgb, var(--dg-accent) 38%, transparent);
+  --dg-shadow-launcher:
+    0 2px 8px rgba(15,23,42,.12),
+    0 8px 24px -4px color-mix(in srgb, var(--dg-primary) 42%, transparent);
+
+  --dg-ease:        cubic-bezier(.32,.72,0,1);
+  --dg-ease-spring: cubic-bezier(.34,1.56,.64,1);
+  --dg-dur:         .2s;
+
+  position:    fixed;
+  right:       var(--dg-side);
+  bottom:      var(--dg-bottom);
+  z-index:     999990;
+  font-family: var(--dg-font);
+  color:       var(--dg-text);
+  font-size:   14px;
+  line-height: 1.5;
+}
+
+.dgtalit-chat--left { right: auto; left: var(--dg-side); }
+
+.dgtalit-chat *, .dgtalit-chat *::before, .dgtalit-chat *::after {
+  box-sizing: border-box; margin: 0; padding: 0;
+}
+.dgtalit-chat button { cursor: pointer; font: inherit; border: none; background: none; }
+.dgtalit-chat svg    { display: block; flex-shrink: 0; }
+
+/* ── Panel ────────────────────────────────────────────────── */
+.dgtalit-panel {
+  display:       grid;
+  grid-template-rows: auto 1fr auto auto;
+  width:         min(var(--dg-width), calc(100vw - 28px));
+  height:        min(var(--dg-height), calc(100vh - var(--dg-bottom) - 88px));
+  margin-bottom: 14px;
+  background:    var(--dg-surface);
+  border-radius: var(--dg-radius);
+  box-shadow:    var(--dg-shadow-panel);
+  overflow:      hidden;
+  opacity:       0;
+  transform:     translateY(14px) scale(.96);
+  pointer-events: none;
+  visibility:    hidden;
+  transform-origin: bottom right;
+  transition:
+    opacity   var(--dg-dur) var(--dg-ease),
+    transform var(--dg-dur) var(--dg-ease-spring),
+    visibility 0s linear var(--dg-dur);
+}
+.dgtalit-chat--left .dgtalit-panel { transform-origin: bottom left; }
+
+.dgtalit-chat.is-open .dgtalit-panel {
+  opacity:       1;
+  transform:     translateY(0) scale(1);
+  pointer-events: auto;
+  visibility:    visible;
+  transition:
+    opacity   var(--dg-dur) var(--dg-ease),
+    transform var(--dg-dur) var(--dg-ease-spring);
+}
+
+/* ── Header ───────────────────────────────────────────────── */
+.dgtalit-header {
+  display:     flex;
+  align-items: center;
+  gap:         12px;
+  padding:     14px 16px;
+  background:  var(--dg-primary);
+  background-image:
+    radial-gradient(ellipse 90% 70% at 0% 0%,
+      rgba(255,255,255,.14) 0%,
+      transparent 55%),
+    radial-gradient(ellipse 60% 80% at 100% 100%,
+      rgba(0,0,0,.18) 0%,
+      transparent 55%);
+  color:       #fff;
+  user-select: none;
+}
+
+.dgtalit-header__avatar {
+  position:    relative;
+  flex-shrink: 0;
+  width:  40px;
+  height: 40px;
+}
+.dgtalit-header__avatar-bg {
+  width:            100%;
+  height:           100%;
+  border-radius:    50%;
+  background:       rgba(255,255,255,.17);
+  border:           1.5px solid rgba(255,255,255,.26);
+  display:          flex;
+  align-items:      center;
+  justify-content:  center;
+}
+.dgtalit-header__avatar-bg svg { width: 19px; height: 19px; }
+
+.dgtalit-header__online {
+  position:      absolute;
+  bottom:        1px;
+  right:         1px;
+  width:         11px;
+  height:        11px;
+  background:    #34d399;
+  border-radius: 50%;
+  border:        2.5px solid var(--dg-primary);
+  box-shadow:    0 0 0 0 rgba(52,211,153,.5);
+  animation:     dg-ping 2.4s ease-out infinite;
+}
+@keyframes dg-ping {
+  0%   { box-shadow: 0 0 0 0 rgba(52,211,153,.6); }
+  70%  { box-shadow: 0 0 0 6px rgba(52,211,153,0); }
+  100% { box-shadow: 0 0 0 0 rgba(52,211,153,0); }
+}
+
+.dgtalit-header__info  { flex: 1; min-width: 0; }
+.dgtalit-header__title {
+  font-size:      14.5px;
+  font-weight:    700;
+  letter-spacing: -.018em;
+  line-height:    1.2;
+  color:          #fff;
+  white-space:    nowrap;
+  overflow:       hidden;
+  text-overflow:  ellipsis;
+}
+.dgtalit-header__subtitle {
+  font-size:   11.5px;
+  margin-top:  2px;
+  color:       rgba(255,255,255,.7);
+  white-space: nowrap;
+  overflow:    hidden;
+  text-overflow: ellipsis;
+}
+
+.dgtalit-close {
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  flex-shrink:     0;
+  width:           32px;
+  height:          32px;
+  border-radius:   var(--dg-radius-sm);
+  background:      rgba(255,255,255,.11);
+  color:           rgba(255,255,255,.85);
+  transition:      background var(--dg-dur) ease, color var(--dg-dur) ease;
+}
+.dgtalit-close:hover { background: rgba(255,255,255,.22); color: #fff; }
+.dgtalit-close:active { background: rgba(255,255,255,.3); }
+.dgtalit-close svg { width: 16px; height: 16px; }
+
+/* ── Mensajes ─────────────────────────────────────────────── */
+.dgtalit-messages {
+  overflow-y:    auto;
+  min-height:    0;
+  padding:       16px 14px 8px;
+  background:    var(--dg-bg-chat);
+  display:       flex;
+  flex-direction: column;
+  gap:           3px;
+  scroll-behavior: smooth;
+  scrollbar-width:  thin;
+  scrollbar-color:  rgba(15,23,42,.12) transparent;
+}
+.dgtalit-messages::-webkit-scrollbar       { width: 4px; }
+.dgtalit-messages::-webkit-scrollbar-track { background: transparent; }
+.dgtalit-messages::-webkit-scrollbar-thumb {
+  background:    rgba(15,23,42,.15);
+  border-radius: 8px;
+}
+
+.dgtalit-msg {
+  display:   flex;
+  gap:       8px;
+  animation: dg-in .18s var(--dg-ease) both;
+}
+@keyframes dg-in {
+  from { opacity: 0; transform: translateY(7px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.dgtalit-msg--user   + .dgtalit-msg--assistant,
+.dgtalit-msg--assistant + .dgtalit-msg--user { margin-top: 10px; }
+
+.dgtalit-msg__avatar {
+  flex-shrink:      0;
+  width:            28px;
+  height:           28px;
+  border-radius:    50%;
+  background:       var(--dg-primary-faint);
+  border:           1px solid var(--dg-border);
+  display:          flex;
+  align-items:      center;
+  justify-content:  center;
+  align-self:       flex-end;
+  margin-bottom:    1px;
+}
+.dgtalit-msg__avatar svg { width: 13px; height: 13px; color: var(--dg-primary); }
+
+.dgtalit-msg__bubble {
+  max-width:    79%;
+  padding:      9px 13px;
+  font-size:    13.5px;
+  line-height:  1.58;
+  white-space:  pre-wrap;
+  overflow-wrap: anywhere;
+  word-break:   break-word;
+}
+.dgtalit-msg__bubble strong { font-weight: 600; }
+.dgtalit-msg__bubble em     { opacity: .85; }
+.dgtalit-msg__bubble a      { color: inherit; text-decoration: underline; opacity: .85; }
+
+/* Asistente */
+.dgtalit-msg--assistant .dgtalit-msg__bubble {
+  background:                #fff;
+  border:                    1px solid var(--dg-border);
+  border-radius:             var(--dg-radius-md);
+  border-bottom-left-radius: 4px;
+  box-shadow:                0 1px 3px rgba(15,23,42,.05);
+  color:                     var(--dg-text);
+}
+
+/* Usuario */
+.dgtalit-msg--user { flex-direction: row-reverse; }
+.dgtalit-msg--user .dgtalit-msg__bubble {
+  background:
+    linear-gradient(
+      148deg,
+      color-mix(in srgb, var(--dg-primary) 84%, #fff) 0%,
+      var(--dg-primary) 100%
+    );
+  color:                      #fff;
+  border-radius:              var(--dg-radius-md);
+  border-bottom-right-radius: 4px;
+}
+
+/* ── Typing ───────────────────────────────────────────────── */
+.dgtalit-typing {
+  padding:     0 14px 10px;
+  background:  var(--dg-bg-chat);
+}
+.dgtalit-typing[hidden] { display: none; }
+.dgtalit-typing__wrap {
+  display:       inline-flex;
+  align-items:   center;
+  gap:           5px;
+  background:    #fff;
+  border:        1px solid var(--dg-border);
+  border-radius: var(--dg-radius-md);
+  border-bottom-left-radius: 4px;
+  padding:       8px 12px;
+  box-shadow:    0 1px 3px rgba(15,23,42,.05);
+}
+.dgtalit-typing__dot {
+  width:         6px;
+  height:        6px;
+  border-radius: 50%;
+  background:    color-mix(in srgb, var(--dg-primary) 50%, #aaa);
+  animation:     dg-bounce 1.2s ease-in-out infinite;
+}
+.dgtalit-typing__dot:nth-child(2) { animation-delay: .16s; }
+.dgtalit-typing__dot:nth-child(3) { animation-delay: .32s; }
+@keyframes dg-bounce {
+  0%, 80%, 100% { transform: translateY(0); opacity: .38; }
+  40%           { transform: translateY(-5px); opacity: 1; }
+}
+
+/* ── Formulario ───────────────────────────────────────────── */
+.dgtalit-form {
+  display:     flex;
+  align-items: flex-end;
+  gap:         8px;
+  padding:     10px 12px;
+  background:  var(--dg-surface);
+  border-top:  1px solid var(--dg-border);
+}
+
+.dgtalit-input {
+  flex:          1;
+  min-height:    40px;
+  max-height:    120px;
+  padding:       10px 13px;
+  border:        1.5px solid var(--dg-border-md);
+  border-radius: var(--dg-radius-md);
+  background:    var(--dg-bg-form);
+  font:          inherit;
+  font-size:     13.5px;
+  line-height:   1.5;
+  color:         var(--dg-text);
+  resize:        none;
+  overflow-y:    auto;
+  scrollbar-width: thin;
+  transition:
+    border-color var(--dg-dur) ease,
+    box-shadow   var(--dg-dur) ease,
+    background   var(--dg-dur) ease;
+}
+.dgtalit-input::placeholder { color: rgba(15,23,42,.33); }
+.dgtalit-input:focus {
+  outline:      none;
+  border-color: var(--dg-primary);
+  background:   #fff;
+  box-shadow:   0 0 0 3px var(--dg-primary-ring);
+}
+.dgtalit-input:disabled {
+  opacity:    .5;
+  cursor:     not-allowed;
+  background: rgba(15,23,42,.04);
+}
+
+.dgtalit-send {
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  flex-shrink:     0;
+  width:           40px;
+  height:          40px;
+  background:      var(--dg-accent);
+  color:           #fff;
+  border-radius:   var(--dg-radius-md);
+  box-shadow:      var(--dg-shadow-btn);
+  transition:
+    background var(--dg-dur) ease,
+    box-shadow var(--dg-dur) ease,
+    transform  .12s ease,
+    opacity    var(--dg-dur) ease;
+}
+.dgtalit-send:hover:not(:disabled) {
+  background:  var(--dg-accent-hov);
+  transform:   translateY(-1px);
+  box-shadow:
+    0 2px 8px rgba(15,23,42,.09),
+    0 6px 20px -2px color-mix(in srgb, var(--dg-accent) 45%, transparent);
+}
+.dgtalit-send:active:not(:disabled) { transform: scale(.95); box-shadow: none; }
+.dgtalit-send:disabled { opacity: .45; cursor: not-allowed; box-shadow: none; }
+.dgtalit-send svg { width: 17px; height: 17px; }
+
+/* ── Launcher ─────────────────────────────────────────────── */
+.dgtalit-launcher {
+  display:     flex;
+  align-items: center;
+  gap:         9px;
+  padding:     12px 20px;
+  min-height:  50px;
+  margin-left: auto;
+
+  background: var(--dg-primary);
+  background-image:
+    radial-gradient(ellipse 70% 80% at 10% 10%,
+      rgba(255,255,255,.15) 0%,
+      transparent 55%);
+
+  color:            #fff;
+  font-size:        14px;
+  font-weight:      600;
+  letter-spacing:   -.01em;
+  border-radius:    999px;
+  box-shadow:       var(--dg-shadow-launcher);
+  position:         relative;
+  overflow:         hidden;
+  transition:
+    transform  var(--dg-dur) var(--dg-ease-spring),
+    box-shadow var(--dg-dur) ease;
+}
+.dgtalit-launcher::after {
+  content:    '';
+  position:   absolute;
+  inset:      0;
+  background: linear-gradient(105deg,
+    transparent 35%,
+    rgba(255,255,255,.14) 50%,
+    transparent 65%);
+  transform:  translateX(-110%);
+  transition: transform .5s ease;
+}
+.dgtalit-launcher:hover::after { transform: translateX(110%); }
+.dgtalit-launcher:hover {
+  transform:  translateY(-2px) scale(1.02);
+  box-shadow:
+    0 4px 12px rgba(15,23,42,.13),
+    0 12px 30px -4px color-mix(in srgb, var(--dg-primary) 52%, transparent);
+}
+.dgtalit-launcher:active { transform: scale(.97); }
+
+.dgtalit-launcher__icon  { width: 20px; height: 20px; }
+.dgtalit-launcher__label { white-space: nowrap; }
+.dgtalit-launcher__badge {
+  display:       none;
+  position:      absolute;
+  top: 4px; right: 4px;
+  width:         10px;
+  height:        10px;
+  border-radius: 50%;
+  background:    #f43f5e;
+  border:        2px solid var(--dg-primary);
+}
+.dgtalit-launcher--notify .dgtalit-launcher__badge { display: block; }
+.dgtalit-chat--left .dgtalit-launcher { margin-left: 0; margin-right: auto; }
+
+/* ── Responsive ───────────────────────────────────────────── */
+@media (max-width: 520px) {
+  .dgtalit-chat { right: 0; left: 0; bottom: 0; }
+  .dgtalit-chat--left { right: 0; left: 0; }
+  .dgtalit-panel {
+    width:         100%;
+    height:        min(94dvh, 640px);
+    margin-bottom: 0;
+    border-radius: var(--dg-radius) var(--dg-radius) 0 0;
+  }
+  .dgtalit-launcher { position: fixed; bottom: 16px; right: 16px; margin: 0; }
+  .dgtalit-chat--left .dgtalit-launcher { right: auto; left: 16px; }
+}
+
+/* ── Accesibilidad ────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .dgtalit-panel, .dgtalit-msg, .dgtalit-launcher,
+  .dgtalit-send, .dgtalit-typing__dot,
+  .dgtalit-header__online, .dgtalit-launcher::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+.dgtalit-chat button:focus-visible,
+.dgtalit-chat textarea:focus-visible {
+  outline: 2px solid var(--dg-primary);
+  outline-offset: 2px;
+}
